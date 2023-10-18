@@ -1,6 +1,6 @@
 #!/bin/bash
 
 
-docker run --rm -it -v /home/ally_taylor:/home/ally_taylor \
+docker run --rm -it -v ${PWD}:${PWD} \
 	-w ${PWD} \
 	toxicity-classifier bash
