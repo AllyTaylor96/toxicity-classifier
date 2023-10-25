@@ -1,4 +1,7 @@
 import os
+import argparse
+from train_data import retrieve_dataset, preprocess_dataset
+
 
 """ Main driver function for training. Will go through the steps in sequence.
 
@@ -11,3 +14,16 @@ Can potentially use model on Twitch comments etc. to ascertain toxicity? An addi
 """
 
 
+
+def main():
+
+    # data retrieval and prep
+    train_dataset, val_dataset, test_dataset = retrieve_dataset()
+    processed_train = preprocess_dataset(train_dataset)
+    processed_val = preprocess_dataset(train_dataset)
+    processed_test = preprocess_dataset(train_dataset)
+
+    print('Hello world!')
+
+if __name__ == "__main__":
+    main()
