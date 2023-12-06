@@ -2,6 +2,7 @@ import os
 import argparse
 import fasttext.util
 from train_data import retrieve_dataset, preprocess_dataset, ToxicDataset
+from torch.utils.data import DataLoader
 
 
 """ Main driver function for training. Will go through the steps in sequence.
@@ -37,7 +38,7 @@ def main():
     ft = fasttext.load_model('cc.en.300.bin')
 
     # reduce FT dimension to 100 as unnecessary for 300
-    fasttext.util.reduce_model(ft, 100)
+    fasttext.util.reduce_model(ft, 300)
 
 
     # pass into Pytorch datasets
