@@ -9,15 +9,19 @@ print(torch.cuda.is_available())
 
 
 def retrieve_dataset():
+
     full_dataset = datasets.load_dataset("OxAISH-AL-LLM/wiki_toxic")
+
+    preprocess_dataset(full_dataset)
+
     train_dataset = full_dataset['train']
     val_dataset = full_dataset['validation']
     test_dataset = full_dataset['test']
 
     return train_dataset, val_dataset, test_dataset
 
-def normalise(example):
-    """ Clean text from dataset and append to new column. """
+def clean_tokenize_text(example):
+    """ Clean + tokenize text from dataset and append to new columns. """
 
     # text cleaning
     norm_text = example['comment_text'].lower()
@@ -27,13 +31,19 @@ def normalise(example):
     norm_text = norm_text.replace('\n', '')
     example['norm_comment_text'] = norm_text
 
+    # text tokenizing
+    tokenized_text = example['norm_comment_text'].split()
+    example['tokenized_text'] = tokenized_text
+
     return example
 
 
 def preprocess_dataset(dataset_obj):
-    """Converts raw text from dataset into normalised clean sentences for encoding. """
+    """Clean + tokenize text, build vocab and find max sent length. """
 
-    dataset_obj = dataset_obj.map(normalise, batched=False, load_from_cache_file=True)
+    # do text cleaning
+    dataset_obj = dataset_obj.map(clean_tokenize_text, batched=False, load_from_cache_file=True)
+
 
     return dataset_obj
 
@@ -50,6 +60,6 @@ class ToxicDataset(Dataset):
         sentence = self.dataset[idx]['norm_comment_text']
         label = self.dataset[idx]['label']
 
-        sentence_embedding = self.ft_model.get_sentence_vector(sentence)
+        sentence_embedding = torch.tensor(self.ft_model.get_sentence_vector(sentence))
 
-        return sentence_embedding, label
+        return (sentence_embedding, label)

@@ -2,7 +2,7 @@ import os
 import argparse
 import fasttext.util
 from train_data import retrieve_dataset, preprocess_dataset, ToxicDataset
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 
 
 """ Main driver function for training. Will go through the steps in sequence.
@@ -21,13 +21,17 @@ def main():
 
     # data retrieval and prep
     print('retrieving datasets...')
-    train_dataset, val_dataset, test_dataset = retrieve_dataset()
+    full_dataset, train_dataset, val_dataset, test_dataset = retrieve_dataset()
 
     # data cleaning
     print('cleaning datasets...')
     processed_train = preprocess_dataset(train_dataset)
     processed_val = preprocess_dataset(val_dataset)
     processed_test = preprocess_dataset(test_dataset)
+
+    """ Need to follow procedure in building vocab and getting max sent length
+    for CNN model to work properly - can follow steps in tutorial
+    https://chriskhanhtran.github.io/posts/cnn-sentence-classification/ """
 
     # download the FastText model (caution, is 4GB in size)
     print('grabbing FastText base English encoder...')
@@ -38,7 +42,7 @@ def main():
     ft = fasttext.load_model('cc.en.300.bin')
 
     # reduce FT dimension to 100 as unnecessary for 300
-    fasttext.util.reduce_model(ft, 300)
+    fasttext.util.reduce_model(ft, 100)
 
 
     # pass into Pytorch datasets
@@ -50,8 +54,27 @@ def main():
     testDataset = ToxicDataset(processed_test, ft)
     print('How many comments in testing: ', testDataset.__len__())
 
+    # set up Dataloaders
+    print('setting up Torch Dataloaders...')
+    batch_size = 30
+
+    train_sampler = RandomSampler(trainingDataset)
+    train_dataloader = DataLoader(trainingDataset, sampler=train_sampler, batch_size=batch_size)
+
+    val_sampler = SequentialSampler(valDataset)
+    val_dataloader = DataLoader(valDataset, sampler=val_sampler, batch_size=batch_size)
+
+    test_sampler = SequentialSampler(testDataset)
+    test_dataloader = DataLoader(testDataset, sampler=test_sampler, batch_size=batch_size)
+
+    train_features, train_labels = next(iter(train_dataloader))
+    print(f"Feature batch shape: {train_features.size()}")
+    print(f"Labels batch shape: {train_labels.size()}")
+
     # now we move to training the actual model
     print('Model training begins...')
+    print(train_features)
+
 
 if __name__ == "__main__":
     main()
