@@ -2,6 +2,7 @@ import os
 import argparse
 import fasttext.util
 from train_data import *
+from train_model import *
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 
 
@@ -26,13 +27,6 @@ def main():
     # data cleaning
     print('cleaning and tokenizing dataset...')
     processed_dataset, vocab_dict, max_sent_len = preprocess_dataset(full_dataset)
-    print(processed_dataset['train'][0])
-    print(len(vocab_dict))
-
-
-    # processed_train = preprocess_dataset(train_dataset)
-    # processed_val = preprocess_dataset(val_dataset)
-    # processed_test = preprocess_dataset(test_dataset)
 
     """ Need to follow procedure in building vocab and getting max sent length
     for CNN model to work properly - can follow steps in tutorial
@@ -41,24 +35,23 @@ def main():
     # download FT word vectors
     vec_name = "wiki-news-300d-1M.vec.zip"
     vector_path = retrieve_word_vecs(vec_name)
-    exit()
 
-    # loading the FastText model
-    # print('loading FastText model...')
-    # ft = fasttext.load_model('cc.en.300.bin')
+    # loading the FastText word vectors as embeddings
+    print('loading FastText word vectors...')
+    word_embeddings = torch.tensor(load_word_vectors(vocab_dict, vector_path))
+    print(word_embeddings.size())
 
-    # print(help(ft))
-    # reduce FT dimension to 100 as unnecessary for 300
-    # fasttext.util.reduce_model(ft, 100)
-
+    processed_train = processed_dataset['train']
+    processed_val = processed_dataset['validation']
+    processed_test = processed_dataset['test']
 
     # pass into Pytorch datasets
     print('creating Torch Datasets...')
-    trainingDataset = ToxicDataset(processed_train, ft)
+    trainingDataset = ToxicDataset(processed_train)
     print('How many comments in training: ', trainingDataset.__len__())
-    valDataset = ToxicDataset(processed_val, ft)
+    valDataset = ToxicDataset(processed_val)
     print('How many comments in validation: ', valDataset.__len__())
-    testDataset = ToxicDataset(processed_test, ft)
+    testDataset = ToxicDataset(processed_test)
     print('How many comments in testing: ', testDataset.__len__())
 
     # set up Dataloaders
@@ -74,14 +67,17 @@ def main():
     test_sampler = SequentialSampler(testDataset)
     test_dataloader = DataLoader(testDataset, sampler=test_sampler, batch_size=batch_size)
 
-    train_features, train_labels = next(iter(train_dataloader))
-    print(f"Feature batch shape: {train_features.size()}")
-    print(f"Labels batch shape: {train_labels.size()}")
-
     # now we move to training the actual model
     print('Model training begins...')
-    print(train_features)
+    model = Simple_CNN(pretrained_embedding=word_embeddings,
+                       vocab_size=len(vocab_dict),
+                       embed_dim=300)
 
+    for step, batch in enumerate(train_dataloader):
+        batch_inputs, batch_labels = tuple(t for t in batch)
+        print('batch inputs type: ', type(batch_inputs))
+        logits = model(batch_inputs)
+        exit()
 
 if __name__ == "__main__":
     main()

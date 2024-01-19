@@ -4,6 +4,7 @@ import string
 import datasets
 import requests
 import shutil
+import fasttext
 from tqdm import tqdm
 import torch
 import numpy as np
@@ -69,7 +70,7 @@ def clean_tokenize_text(example):
     example['norm_comment_text'] = norm_text
 
     # tokenizing
-    tokenized_text = example['norm_comment_text'].split()
+    tokenized_text = fasttext.tokenize(example['norm_comment_text'])
     example['tokenized_text'] = tokenized_text
 
     return example
@@ -121,23 +122,40 @@ def preprocess_dataset(dataset_obj):
 
     return dataset_obj, vocab_dict, max_sent_len
 
+def load_word_vectors(vocab_dict, word_vector_filepath):
 
+    with open(word_vector_filepath, 'r', encoding='utf-8', newline='\n', errors='ignore') as f:
+        vocab_dict_size, embedding_dim_size = map(int, f.readline().split())
 
+        # make random vectors first of all
+        embeddings = np.random.uniform(-0.25, 0.25, (len(vocab_dict), embedding_dim_size))
+        embeddings[vocab_dict['<pad>']] = np.zeros((embedding_dim_size,))
+
+        # load in pretrained vectors
+        pretrained_count = 0
+        for line in tqdm(f, total=vocab_dict_size):
+            tokens = line.rstrip().split(' ')
+            word = tokens[0]
+            if word in vocab_dict:
+                pretrained_count += 1
+                embeddings[vocab_dict[word]] = np.array(tokens[1:], dtype=np.float32)
+
+        print('There are {} / {} pretrained vectors found from training data.'.format(
+            pretrained_count, len(vocab_dict)))
+
+    return embeddings
 
 
 
 class ToxicDataset(Dataset):
-    def __init__(self, dataset_obj, ft_model):
+    def __init__(self, dataset_obj):
         self.dataset = dataset_obj
-        self.ft_model = ft_model
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        sentence = self.dataset[idx]['norm_comment_text']
+        encoded_input = self.dataset[idx]['encoded_text']
         label = self.dataset[idx]['label']
 
-        sentence_embedding = torch.tensor(self.ft_model.get_sentence_vector(sentence))
-
-        return (sentence_embedding, label)
+        return (encoded_input, label)

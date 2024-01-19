@@ -41,18 +41,25 @@ import numpy as np
 #         x = self.softmax(x)
 #         return x
 
+def train(model):
+    logits = model(input_ids)
+
+
 class Simple_CNN(nn.Module):
     """ Simple 1D CNN Classifier. """
     def __init__(self,
-                 embed_dim=100,
+                 pretrained_embedding=None,
+                 vocab_size=None,
+                 embed_dim=300,
                  filter_sizes=[3, 4, 5],
                  num_filters=[100, 100, 100],
                  num_classes=2,
                  dropout=0.5):
 
         super(Simple_CNN, self).__init__()
-
-        self.embed_dim = embed_dim
+        self.vocab_size, self.embed_dim = pretrained_embedding.shape
+        self.embedding = nn.Embedding.from_pretrained(pretrained_embedding,
+                                                      freeze=True)
 
         # set up convolution network
         self.conv1d_list = nn.ModuleList([
@@ -75,5 +82,13 @@ class Simple_CNN(nn.Module):
         Returns:
             logits (torch.Tensor): A tensor of output logits with shape (batch_size, n_classes
         """
+
+        print(type(inputs))
+        input_tensor = torch.tensor(inputs)
+        print(type(input_tensor))
+        exit()
+        x_embed = self.embedding(inputs).float()
+        print(x_embed)
+        exit()
 
 
