@@ -30,7 +30,7 @@ def retrieve_word_vecs(vec_name):
     data_dir = os.getcwd() + '/data/'
     output_filepath = data_dir + vec_name
 
-    if os.path.isfile(output_filepath):
+    if os.path.isfile(output_filepath.replace('.zip', '')):
         print('Word vec file already found at {} - skipping download...'.format(output_filepath))
 
     else:
@@ -158,4 +158,4 @@ class ToxicDataset(Dataset):
         encoded_input = self.dataset[idx]['encoded_text']
         label = self.dataset[idx]['label']
 
-        return (encoded_input, label)
+        return (torch.tensor(encoded_input), torch.tensor(label))
