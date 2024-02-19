@@ -1,6 +1,7 @@
 import os
 import re
 import string
+import logging
 import datasets
 import requests
 import shutil
@@ -10,32 +11,27 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 
-def retrieve_dataset():
-
-    full_dataset = datasets.load_dataset("OxAISH-AL-LLM/wiki_toxic", cache_dir=os.getcwd() + '/data')
-
-    train_dataset = full_dataset['train']
-    val_dataset = full_dataset['validation']
-    test_dataset = full_dataset['test']
-
+def retrieve_dataset(hf_dataset_name, data_dir):
+    hf_dataset_path = data_dir + '/hf_dataset'
+    logging.info(f'HF Dataset cached at {hf_dataset_path}')
+    full_dataset = datasets.load_dataset(hf_dataset_name, cache_dir=hf_dataset_path)
     return full_dataset
 
-def retrieve_word_vecs(vec_name):
+def retrieve_word_vecs(data_dir, vec_url):
 
     # define FastText URLs
-    ft_url = "https://dl.fbaipublicfiles.com/fasttext/vectors-english/"
-    vec_url = ft_url + vec_name
+    vec_name = vec_url.split('/')[-1]
 
     # check if word vectors already there
-    data_dir = os.getcwd() + '/data/'
-    output_filepath = data_dir + vec_name
+    output_filepath = data_dir + '/' + vec_name
+
 
     if os.path.isfile(output_filepath.replace('.zip', '')):
-        print('Word vec file already found at {} - skipping download...'.format(output_filepath))
+        logging.info(f'Word vec file already found at {output_filepath} - skipping download...')
 
     else:
         # if not, download them from the FastText site
-        print('Downloading Fasttext Vectors from {}...'.format(vec_url))
+        logging.info(f'Downloading Fasttext Vectors from {vec_url}...')
 
         r = requests.get(vec_url, stream=True)
         total_len = int(r.headers.get('content-length', 0))
@@ -49,10 +45,11 @@ def retrieve_word_vecs(vec_name):
                     f.write(data)
 
             if total_len != 0 and progress_bar.n != total_len:
+                logging.error("Could not download FastText Vectors")
                 raise RuntimeError("Could not download FastText Vectors")
 
         # unzip file
-        print('unzipping word vecs...')
+        logging.info('unzipping word vecs...')
         shutil.unpack_archive(output_filepath, extract_dir=data_dir)
 
     word_vec_path = output_filepath.replace('.zip', '')
@@ -92,11 +89,10 @@ def encode_text(example, vocab_dict, max_sent_len):
 def preprocess_dataset(dataset_obj):
     """Clean + tokenize text, build vocab, find max sent length and encode. """
 
-    # do text cleaning
+    logging.info('Cleaning and tokenizing HF dataset...')
     dataset_obj = dataset_obj.map(clean_tokenize_text, batched=False, load_from_cache_file=True)
 
-    # build vocab dictionary
-    print('Building vocabulary dict...')
+    logging.info('Building vocabulary dict...')
     vocab_dict = {}
     vocab_dict['<pad>'] = 0
     vocab_dict['<unk>'] = 1
@@ -115,7 +111,7 @@ def preprocess_dataset(dataset_obj):
         max_sent_len = max(max_sent_len, len(tokenized_text))
 
     # now use the vocab dict for sentence encoding
-    print('Encoding text using vocab dict...')
+    logging.info('Encoding HF dataset using vocabulary dict...')
     dataset_obj = dataset_obj.map(encode_text, batched=False, load_from_cache_file=True,
                                   fn_kwargs={'vocab_dict': vocab_dict,
                                              'max_sent_len': max_sent_len})
@@ -140,8 +136,7 @@ def load_word_vectors(vocab_dict, word_vector_filepath):
                 pretrained_count += 1
                 embeddings[vocab_dict[word]] = np.array(tokens[1:], dtype=np.float32)
 
-        print('There are {} / {} pretrained vectors found from training data.'.format(
-            pretrained_count, len(vocab_dict)))
+    logging.info(f'There are {pretrained_count} / {len(vocab_dict)} pretrained vectors found from training data.')
 
     return embeddings
 

@@ -1,0 +1,5 @@
+{
+	"dataDir": "/home/ally_taylor/code/toxicity-classifier/data",
+	"hfDatasetName": "OxAISH-AL-LLM/wiki_toxic",
+	"ftVectorUrl": "https://dl.fbaipublicfiles.com/fasttext/vectors-english/wiki-news-300d-1M.vec.zip"
+}
