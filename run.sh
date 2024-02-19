@@ -10,7 +10,7 @@ fi
 if [ "$1" = "prep" ]; then
     python3 src/data_prep.py -c config/prep_config.json
 elif [ "$1" = "train" ]; then
-	python3 src/train.py
+	python3 src/train.py -c config/train_config.json
 elif [ "$1" = "test" ]; then
 	echo "Testing functionality goes here"
 else
