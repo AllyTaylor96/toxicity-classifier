@@ -11,7 +11,7 @@ RUN pip install --upgrade pip
 
 COPY requirements.txt /opt/classifier/requirements.txt
 RUN pip install -r requirements.txt
-COPY . /opt/classifier
+# COPY . /opt/classifier
 
 
 
