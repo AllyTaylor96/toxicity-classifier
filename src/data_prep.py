@@ -4,7 +4,6 @@ import pickle
 from data_functions import *
 from utils import configure_logging, load_json, config_parser
 
-
 def main():
 
     # load config
@@ -33,15 +32,16 @@ def main():
 
     # saving files
 
-    logging.info('Saving HF dataset files as .json for easy loading for training')
-    for split, dataset in processed_dataset.items():
-        split_path = f"{config['dataDir']}/processed_dataset-{split}.json"
-        dataset.to_json(split_path)
-        logging.info(f'{split} dataset saved at {split_path}...')
+    logging.info('Saving HF dataset files to disk for easy loading for training')
 
+    hf_dataset_path = config['dataDir'] + '/processed_dataset'
     word_emb_path = config['dataDir'] + '/word_embeddings.pkl'
+
+    processed_dataset.save_to_disk(hf_dataset_path)
     with open(word_emb_path, 'wb') as f:
         pickle.dump(word_embeddings, f)
+
+    logging.info(f'Processed HF dataset saved at {hf_dataset_path}...')
     logging.info(f'Final embeddings saved at {word_emb_path}')
 
 if __name__ == "__main__":
