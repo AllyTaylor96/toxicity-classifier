@@ -8,14 +8,16 @@ from data_functions import ToxicDataset
 from train_model import Simple_CNN
 from utils import config_parser, configure_logging, load_json
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
-import warnings
-warnings.filterwarnings("ignore", message="promote has been superseded by promote_options='default'.", category=FutureWarning, module="datasets")
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
 
+# suppress irritating warning from datasets
+import warnings
+warnings.filterwarnings("ignore", message="promote has been superseded by promote_options='default'.", category=FutureWarning, module="datasets")
 
 """ Main driver function for training. Will go through the steps in sequence.
 
@@ -60,6 +62,7 @@ def train(model, optimizer, train_dataloader, val_dataloader, test_dataloader, m
     epoch_is, train_losses, val_losses, val_accs, test_accs = [], [], [], [], []
 
     for epoch_i in range(epochs):
+        epoch_i = epoch_i + 1
         epoch_is.append(epoch_i)
         logging.info(f"Epoch: {epoch_i}")
         total_loss = 0
@@ -115,11 +118,21 @@ def train(model, optimizer, train_dataloader, val_dataloader, test_dataloader, m
                 torch.save(model.state_dict(), model_dir + '/best_model.pt')
 
         time_elapsed = time.time() - t0_epoch
-        logging.info(f"Epoch complete: time taken {time_elapsed:.2f}")
+        logging.info(f"Epoch complete: time taken {time_elapsed:.2f}s")
 
     logging.info(f"\nTraining complete! Best test accuracy: {best_test_accuracy:.2f}%.")
 
-    return model
+    result_dict = {
+        'Epoch': epoch_is,
+        'Train Loss': train_losses,
+        'Validation Loss': val_losses,
+        'Validation Accuracy': val_accs,
+        'Test Accuracy': test_accs
+    }
+
+    result_df = pd.DataFrame(data=result_dict)
+
+    return model, result_df
 
 def evaluate(model, dataloader):
     model.eval()
@@ -205,7 +218,9 @@ def main():
                                   device=device)
 
 
-    trained_model = train(model, optimizer, train_dataloader, val_dataloader, test_dataloader, config['modelDir'], epochs=20)
+    trained_model, results_df = train(model, optimizer, train_dataloader, val_dataloader, test_dataloader, config['modelDir'], epochs=3)
+
+    results_df.to_csv(config['modelDir']+'/train_results.tsv', sep='\t', index=False)
 
 if __name__ == "__main__":
     main()
