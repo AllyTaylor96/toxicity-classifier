@@ -100,16 +100,18 @@ def preprocess_dataset(dataset_obj):
 
     max_sent_len = 0
     idx = 2
-    for tokenized_text in tqdm(list(dataset_obj['train']['tokenized_text']), total=len(dataset_obj['train'])):
+    for split in ['train', 'validation', 'test']:
+        logging.info(f'Checking {split} data for unknown vocab...')
+        for tokenized_text in tqdm(list(dataset_obj[split]['tokenized_text']), total=len(dataset_obj[split])):
 
-        # check if token in vocab, and if not add
-        for token in tokenized_text:
-            if token not in vocab_dict:
-                vocab_dict[token] = idx
-                idx += 1
+            # check if token in vocab, and if not add
+            for token in tokenized_text:
+                if token not in vocab_dict:
+                    vocab_dict[token] = idx
+                    idx += 1
 
-        # update max sent length
-        max_sent_len = max(max_sent_len, len(tokenized_text))
+            # update max sent length
+            max_sent_len = max(max_sent_len, len(tokenized_text))
 
     # now use the vocab dict for sentence encoding
     logging.info('Encoding HF dataset using vocabulary dict...')
