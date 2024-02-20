@@ -20,7 +20,7 @@ def main():
     del full_dataset['balanced_train']
 
     logging.info('Cleaning and tokenizing...')
-    processed_dataset, vocab_dict, max_sent_len = preprocess_dataset(full_dataset)
+    processed_dataset, vocab_dict, max_sent_len = preprocess_dataset(full_dataset, config['maxSentWordLen'])
 
     # fastText pulling + mapping to huggingface vocab
 

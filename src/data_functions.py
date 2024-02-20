@@ -5,6 +5,7 @@ import logging
 import datasets
 import requests
 import shutil
+from collections import Counter
 import fasttext
 from tqdm import tqdm
 import torch
@@ -16,6 +17,10 @@ def retrieve_dataset(hf_dataset_name, data_dir):
     logging.info(f'HF Dataset cached at {hf_dataset_path}')
     full_dataset = datasets.load_dataset(hf_dataset_name, cache_dir=hf_dataset_path)
     return full_dataset
+
+
+
+
 
 def retrieve_word_vecs(data_dir, vec_url):
 
@@ -70,6 +75,9 @@ def clean_tokenize_text(example):
     tokenized_text = fasttext.tokenize(example['norm_comment_text'])
     example['tokenized_text'] = tokenized_text
 
+    # get sentence length for filtering later
+    example['sentWordCount'] = len(example['tokenized_text'])
+
     return example
 
 def encode_text(example, vocab_dict, max_sent_len):
@@ -87,11 +95,24 @@ def encode_text(example, vocab_dict, max_sent_len):
     return example
 
 
-def preprocess_dataset(dataset_obj):
-    """Clean + tokenize text, build vocab, find max sent length and encode. """
+def preprocess_dataset(dataset_obj, maxSentLen):
+    """Clean + tokenize text, filter on size, build vocab, find max sent length and encode. """
 
     logging.info('Cleaning and tokenizing HF dataset...')
     dataset_obj = dataset_obj.map(clean_tokenize_text, batched=False, load_from_cache_file=True)
+
+    logging.info('Filtering on max word length...')
+    logging.info(f"Dataset size before filtering: \n\
+    Train: {len(dataset_obj['train'])} \n\
+    Validation: {len(dataset_obj['validation'])} \n\
+    Test: {len(dataset_obj['test'])}")
+
+    dataset_obj = dataset_obj.filter(lambda example: example['sentWordCount'] < maxSentLen)
+
+    logging.info(f"Dataset size after filtering: \n\
+    Train: {len(dataset_obj['train'])} \n\
+    Validation: {len(dataset_obj['validation'])} \n\
+    Test: {len(dataset_obj['test'])}")
 
     logging.info('Building vocabulary dict...')
     vocab_dict = {}
