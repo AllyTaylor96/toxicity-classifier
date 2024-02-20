@@ -8,9 +8,12 @@ from data_functions import ToxicDataset
 from train_model import Simple_CNN
 from utils import config_parser, configure_logging, load_json
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
+import warnings
+warnings.filterwarnings("ignore", message="promote has been superseded by promote_options='default'.", category=FutureWarning, module="datasets")
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
 from tqdm import tqdm
 
 
@@ -47,21 +50,24 @@ def init_model(word_embeddings, filter_sizes, num_filters, num_classes, dropout,
 
 
 
-def train(model, optimizer, train_dataloader, val_dataloader, epochs=20, device='cpu'):
+def train(model, optimizer, train_dataloader, val_dataloader, test_dataloader, model_dir, epochs=20):
 
-    best_accuracy = 0
+    best_val_accuracy = 0
+    best_test_accuracy = 0
     loss_fn = nn.CrossEntropyLoss()
 
     # start training loop
-    print(f"{'Epoch':^7} | {'Train Loss':^12} | {'Val Loss':^10} | {'Val Acc':^9} | {'Elapsed':^9}")
-    print("-" * 60)
+    epoch_is, train_losses, val_losses, val_accs, test_accs = [], [], [], [], []
 
     for epoch_i in range(epochs):
+        epoch_is.append(epoch_i)
+        logging.info(f"Epoch: {epoch_i}")
         total_loss = 0
         t0_epoch = time.time()
 
-        model.train()
+        # training
 
+        model.train()
         for step, batch in enumerate(tqdm(train_dataloader)):
 
             b_input_ids, b_labels = tuple(t.to(device) for t in batch)
@@ -77,27 +83,51 @@ def train(model, optimizer, train_dataloader, val_dataloader, epochs=20, device=
 
             optimizer.step()
 
-        avg_train_loss = total_loss / len(train_dataloader)
+        epoch_train_loss = total_loss / len(train_dataloader)
+        logging.info(f"Train Loss: {epoch_train_loss:.2f}")
+        train_losses.append(epoch_train_loss)
+
+        logging.info(f"Validating...")
+
         if val_dataloader is not None:
 
             val_loss, val_accuracy = evaluate(model, val_dataloader)
-            if val_accuracy > best_accuracy:
-                best_accuracy = val_accuracy
+            logging.info(f"Val Loss: {val_loss:.2f}")
+            logging.info(f"Val Accuracy: {val_accuracy:.2f}")
+            val_losses.append(val_loss)
+            val_accs.append(val_accuracy)
 
-            time_elapsed = time.time() - t0_epoch
-            print(f"{epoch_i + 1:^7} | {avg_train_loss:^12.6f} | {val_loss:^10.6f} | {val_accuracy:^9.2f} | {time_elapsed:^9.2f}")
-
-    print("\nTraining complete! Best accuracy: {best_accuracy:.2f}%.")
-    torch.save(model.state_dict(), config['modelDir'] + '/initial_model.pt')
-
+            if val_accuracy > best_val_accuracy:
+                best_val_accuracy = val_accuracy
 
 
-def evaluate(model, val_dataloader):
+        logging.info(f"Testing...")
+
+        if test_dataloader is not None:
+
+            test_loss, test_accuracy = evaluate(model, test_dataloader)
+            logging.info(f"Test Accuracy: {test_accuracy:.2f}")
+            test_accs.append(test_accuracy)
+
+            if test_accuracy > best_test_accuracy:
+                best_test_accuracy = test_accuracy
+                logging.info(f"New best model found on test set - test accuracy {best_test_accuracy:.2f}% - saving...")
+                torch.save(model.state_dict(), model_dir + '/best_model.pt')
+
+        time_elapsed = time.time() - t0_epoch
+        logging.info(f"Epoch complete: time taken {time_elapsed:.2f}")
+
+    logging.info(f"\nTraining complete! Best test accuracy: {best_test_accuracy:.2f}%.")
+
+    return model
+
+def evaluate(model, dataloader):
     model.eval()
+    loss_fn = nn.CrossEntropyLoss()
 
-    val_accuracy, val_loss = [], []
+    accuracies, losses = [], []
 
-    for batch in val_dataloader:
+    for batch in tqdm(dataloader):
         b_input_ids, b_labels = tuple(t.to(device) for t in batch)
 
         # Get batch logits
@@ -105,32 +135,33 @@ def evaluate(model, val_dataloader):
             logits = model(b_input_ids)
 
         loss = loss_fn(logits, b_labels)
-        val_loss.append(loss.item())
+        losses.append(loss.item())
 
         # get preds
         preds = torch.argmax(logits, dim=1).flatten()
 
         # calculate accuracy
         accuracy = (preds == b_labels).cpu().numpy().mean() * 100
-        val_accuracy.append(accuracy)
+        accuracies.append(accuracy)
 
     # calculate overall accuracy and loss on val set
-    val_loss = np.mean(val_loss)
-    val_accuracy = np.mean(val_accuracy)
+    loss = np.mean(losses)
+    accuracy = np.mean(accuracies)
 
-    return val_loss, val_accuracy
+    return loss, accuracy
 
 def main():
 
     args = config_parser()
     config = load_json(args.config_path)
     configure_logging('train')
+    global device
 
     if torch.cuda.is_available():
 
         device = torch.device("cuda")
         logging.info(f'There are {torch.cuda.device_count()} GPU(s) available.')
-        logging.info('Device name:', torch.cuda.get_device_name(0))
+        logging.info('Device name:' + str(torch.cuda.get_device_name(0)))
 
     else:
 
@@ -144,32 +175,23 @@ def main():
         word_embeddings = pickle.load(f)
         vocab_size, embed_dim = word_embeddings.shape
 
-
-    processed_train = processed_dataset['train']
-    processed_val = processed_dataset['validation']
-    processed_test = processed_dataset['test']
-
     batch_size = config['batchSize']
     logging.info(f'creating Torch Datasets with batch size {batch_size}...')
 
-    trainingDataset = ToxicDataset(processed_train)
-    print(processed_val['encoded_text'][1])
-    exit()
+    trainingDataset = ToxicDataset(processed_dataset['train'])
     train_sampler = RandomSampler(trainingDataset)
     train_dataloader = DataLoader(trainingDataset, sampler=train_sampler, batch_size=batch_size)
-    logging.info('How many comments in training: ', str(trainingDataset.__len__()))
+    logging.info('How many comments in training: ' + str(trainingDataset.__len__()))
 
-    valDataset = ToxicDataset(processed_val)
+    valDataset = ToxicDataset(processed_dataset['validation'])
     val_sampler = SequentialSampler(valDataset)
     val_dataloader = DataLoader(valDataset, sampler=val_sampler, batch_size=batch_size)
+    logging.info('How many comments in validation: ' + str(valDataset.__len__()))
 
-    exit()
-    logging.info('How many comments in validation: ', str(valDataset.__len__()))
-
-    testDataset = ToxicDataset(processed_test)
+    testDataset = ToxicDataset(processed_dataset['test'])
     test_sampler = SequentialSampler(testDataset)
     test_dataloader = DataLoader(testDataset, sampler=test_sampler, batch_size=batch_size)
-    logging.info('How many comments in testing: ', str(testDataset.__len__()))
+    logging.info('How many comments in testing: ' + str(testDataset.__len__()))
 
     # now we move to training the actual model
     logging.info('Model training beginning...')
@@ -183,7 +205,7 @@ def main():
                                   device=device)
 
 
-    train(model, optimizer, train_dataloader, val_dataloader, epochs=10, device=device)
+    trained_model = train(model, optimizer, train_dataloader, val_dataloader, test_dataloader, config['modelDir'], epochs=20)
 
 if __name__ == "__main__":
     main()
