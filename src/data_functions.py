@@ -90,7 +90,7 @@ def encode_text(example, vocab_dict, max_sent_len):
     # encode the padded tokens to their IDs using the vocab dict
     encoded_text = [vocab_dict.get(token, 1) for token in tokenized_text]
 
-    example['encoded_text'] = np.array(encoded_text, dtype=np.float32)
+    example['encoded_text'] = np.array(encoded_text)
 
     return example
 
