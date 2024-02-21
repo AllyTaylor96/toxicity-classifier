@@ -1,0 +1,17 @@
+{
+	"dataDir": "/home/ally_taylor/code/toxicity-classifier/data",
+	"modelDir": "/home/ally_taylor/code/toxicity-classifier/models",
+	"testComments": [
+		"Whoever wrote this is a complete waste of space.",
+		"This is a tremendous insight - thanks for writing.",
+		"You are a complete moron for writing that.",
+		"omg this game is complete trash!! hilarious that the developers thought this was acceptable.",
+		"wow this game game seems kl",
+		"ban one side of an argument by nazi mods - you will not get any discussion",
+		"they ignore the rules of the road and therefore hold no rights",
+		"take your nihilism and resentment somewhere else please, than this forum",
+		"wow you sound really insecure",
+		"this channel is inflating views imagine spending money on increasing views!! sad loser"
+	]
+
+}

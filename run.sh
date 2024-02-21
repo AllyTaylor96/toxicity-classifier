@@ -12,8 +12,8 @@ if [ "$1" = "prep" ]; then
 elif [ "$1" = "train" ]; then
 	python3 src/train.py -c config/train_config.json
 elif [ "$1" = "test" ]; then
-	echo "Testing functionality goes here"
+	python3 src/test.py -c config/test_config.json
 else
-	echo "Invalid keyword. Supported keywords are 'train' and 'test'."
+	echo "Invalid keyword. Supported keywords are 'prep', 'train' or 'test'."
 	exit 1
 fi
