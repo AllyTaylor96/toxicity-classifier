@@ -3,3 +3,4 @@ numpy==1.26.1
 datasets==2.14.5
 torch==2.1.0
 torchvision==0.16.0
+torcheval==0.0.7
