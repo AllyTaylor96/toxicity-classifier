@@ -32,7 +32,7 @@ def check_for_cuda():
 def set_up_dataloaders(processed_dataset, batch_size):
     """Returns dataloaders for train/val/test and logs sizes."""
 
-    trainingDataset = ToxicDataset(processed_dataset['train'])
+    trainingDataset = ToxicDataset(processed_dataset['balanced_train'])
     train_sampler = RandomSampler(trainingDataset)
     train_dataloader = DataLoader(trainingDataset, sampler=train_sampler, batch_size=batch_size)
     logging.info('How many comments in training: ' + str(trainingDataset.__len__()))

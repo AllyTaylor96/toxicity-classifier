@@ -2,7 +2,7 @@ import logging
 import pickle
 
 from utils import configure_logging, load_json, config_parser
-from test_functions import load_best_model
+from test_functions import load_best_model, predict
 
 
 def main():
@@ -20,10 +20,19 @@ def main():
     with open(config['dataDir'] + '/word_embeddings.pkl', 'rb') as f:
         word_embeddings = pickle.load(f)
 
+    with open(config['dataDir'] + '/vocab_dict.pkl', 'rb') as f:
+        vocab_dict = pickle.load(f)
+
     model = load_best_model(best_model_path, word_embeddings)
 
     test_sentences = config['testComments']
-    print(test_sentences)
+
+    for sentence in test_sentences:
+        logging.info(f'Inference on: {sentence}')
+        probs = predict(sentence, model, vocab_dict)
+
+        logging.info(f"This comment is {probs[1] * 100:.2f}% toxic.")
+
 
 
 
