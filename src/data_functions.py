@@ -40,14 +40,14 @@ def preprocess_dataset(dataset_obj, maxSentLen):
 
     logging.info('Filtering on max word length...')
     logging.info(f"Dataset size before filtering: \n\
-    Train: {len(dataset_obj['train'])} \n\
+    Train: {len(dataset_obj['balanced_train'])} \n\
     Validation: {len(dataset_obj['validation'])} \n\
     Test: {len(dataset_obj['test'])}")
 
     dataset_obj = dataset_obj.filter(lambda example: example['sentWordCount'] < maxSentLen)
 
     logging.info(f"Dataset size after filtering: \n\
-    Train: {len(dataset_obj['train'])} \n\
+    Train: {len(dataset_obj['balanced_train'])} \n\
     Validation: {len(dataset_obj['validation'])} \n\
     Test: {len(dataset_obj['test'])}")
 
@@ -59,7 +59,7 @@ def preprocess_dataset(dataset_obj, maxSentLen):
 
     max_sent_len = 0
     idx = 2
-    for split in ['train', 'validation', 'test']:
+    for split in ['balanced_train', 'validation', 'test']:
         logging.info(f'Checking {split} data for unknown vocab...')
         for tokenized_text in tqdm(list(dataset_obj[split]['tokenized_text']), total=len(dataset_obj[split])):
 
