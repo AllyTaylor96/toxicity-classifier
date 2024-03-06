@@ -30,8 +30,10 @@ def main():
     for sentence in test_sentences:
         logging.info(f'Inference on: {sentence}')
         probs = predict(sentence, model, vocab_dict)
-
-        logging.info(f"This comment is {probs[1] * 100:.2f}% toxic.")
+        if probs[1] > 0.5:
+            logging.info(f"This comment is toxic. (Toxic probability: {probs[1] * 100:.2f}%)\n")
+        else:
+            logging.info(f"This comment is not toxic. (Toxic probability: {probs[1] * 100:.2f}%)\n")
 
 
 
