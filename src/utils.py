@@ -39,8 +39,10 @@ def check_for_folders(config):
     data_dir = repo_dir / 'data'
     model_dir = repo_dir / 'models'
 
-    data_dir.mkdir(parents=True, exist_ok=True)
-    model_dir.mkdir(parents=True, exist_ok=True)
+    if not os.path.exists(str(data_dir)):
+        data_dir.mkdir(parents=True, exist_ok=True)
+    if not os.path.exists(str(model_dir)):
+        model_dir.mkdir(parents=True, exist_ok=True)
 
     return repo_dir, data_dir, model_dir
 
