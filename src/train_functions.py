@@ -63,7 +63,8 @@ def init_model(word_embeddings, filter_sizes, num_filters, num_classes, dropout,
 
     optimizer = optim.Adadelta(cnn_model.parameters(),
                                lr=lr,
-                               rho=0.95)
+                               rho=0.95,
+                              weight_decay=1e-5)
 
     return cnn_model, optimizer
 

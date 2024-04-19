@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import os
+from pathlib import Path
 
 
 def configure_logging(logname):
@@ -30,4 +31,17 @@ def config_parser():
     parser.add_argument('-c', '--config_path', type=str, help='Path to the config file')
     args = parser.parse_args()
     return args
+
+def check_for_folders(config):
+    """Check folders are where they should be, and create if not."""
+
+    repo_dir = Path(config['repoDir'])
+    data_dir = repo_dir / 'data'
+    model_dir = repo_dir / 'models'
+
+    data_dir.mkdir(parents=True, exist_ok=True)
+    model_dir.mkdir(parents=True, exist_ok=True)
+
+    return repo_dir, data_dir, model_dir
+
 

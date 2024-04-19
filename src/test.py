@@ -1,7 +1,7 @@
 import logging
 import pickle
 
-from utils import configure_logging, load_json, config_parser
+from utils import configure_logging, load_json, config_parser, check_for_folders
 from test_functions import load_best_model, predict
 
 
@@ -9,18 +9,17 @@ def main():
 
     args = config_parser()
     config = load_json(args.config_path)
+    repo_dir, data_dir, model_dir = check_for_folders(config)
     configure_logging('test')
 
-    best_model_path = config['modelDir'] + '/best_model.pt'
+    best_model_path = str(model_dir / '/best_model.pt')
 
     logging.info(f'Loading best saved model: {best_model_path}')
 
-    # not a fan of needing to define this here - a better way?
-
-    with open(config['dataDir'] + '/word_embeddings.pkl', 'rb') as f:
+    with open(str(data_dir / 'word_embeddings.pkl'), 'rb') as f:
         word_embeddings = pickle.load(f)
 
-    with open(config['dataDir'] + '/vocab_dict.pkl', 'rb') as f:
+    with open(str(data_dir / 'vocab_dict.pkl'), 'rb') as f:
         vocab_dict = pickle.load(f)
 
     model = load_best_model(best_model_path, word_embeddings)

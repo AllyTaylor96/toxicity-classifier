@@ -1,6 +1,17 @@
 {
-	"dataDir": "/home/ally_taylor/code/toxicity-classifier/data",
-	"modelDir": "/home/ally_taylor/code/toxicity-classifier/models",
+	"repoDir": "/home/ally_taylor/code/toxicity-classifier/data",
+	"hfDatasetName": "OxAISH-AL-LLM/wiki_toxic",
+	"keepHfDatasetCached": false,
+	"ftVectorUrl": "https://dl.fbaipublicfiles.com/fasttext/vectors-english/wiki-news-300d-1M.vec.zip",
+	"maxSentWordLen": 250,
+
+	"batchSize": 50,
+	"trainEpochs": 20,
+	"cnnFilterSizes": [3, 4, 5],
+	"cnnNumFilters": [100, 100, 100],
+	"cnnNumClasses": 2,
+	"cnnDropout": 0.5,
+	"cnnLr": 0.01,
 	"testComments": [
 		"Whoever wrote this is a complete waste of space.",
 		"This is a tremendous insight - thanks for writing.",

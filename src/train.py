@@ -5,13 +5,14 @@ import warnings
 from datasets import load_from_disk
 
 from train_functions import check_for_cuda, set_up_dataloaders, init_model, train
-from utils import config_parser, configure_logging, load_json
+from utils import config_parser, configure_logging, load_json, check_for_folders
 
 
 def main():
 
     args = config_parser()
     config = load_json(args.config_path)
+    repo_dir, data_dir, model_dir = check_for_folders(config)
     configure_logging('train')
 
     global device
@@ -20,9 +21,9 @@ def main():
     logging.info('Loading data files...')
 
     warnings.filterwarnings("ignore", category=FutureWarning, module="datasets")
-    processed_dataset = load_from_disk(config['dataDir'] + '/processed_dataset')
+    processed_dataset = load_from_disk(str(data_dir / 'processed_dataset'))
 
-    with open(config['dataDir'] + '/word_embeddings.pkl', 'rb') as f:
+    with open(str(data_dir / 'word_embeddings.pkl'), 'rb') as f:
         word_embeddings = pickle.load(f)
         vocab_size, embed_dim = word_embeddings.shape
 
@@ -42,9 +43,9 @@ def main():
                                   lr=config['cnnLr'])
 
 
-    trained_model, results_df = train(model, optimizer, train_dataloader, val_dataloader, test_dataloader, config['modelDir'], epochs=config['trainEpochs'])
+    trained_model, results_df = train(model, optimizer, train_dataloader, val_dataloader, test_dataloader, str(model_dir), epochs=config['trainEpochs'])
 
-    results_df.to_csv(config['modelDir']+'/train_results.tsv', sep='\t', index=False)
+    results_df.to_csv(str(model_dir / 'train_results.tsv'), sep='\t', index=False)
 
 if __name__ == "__main__":
     main()
