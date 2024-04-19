@@ -1,12 +1,12 @@
 {
-	"repoDir": "/home/ally_taylor/code/toxicity-classifier/data",
+	"repoDir": "/home/ally_taylor/code/toxicity-classifier",
 	"hfDatasetName": "OxAISH-AL-LLM/wiki_toxic",
 	"keepHfDatasetCached": false,
 	"ftVectorUrl": "https://dl.fbaipublicfiles.com/fasttext/vectors-english/wiki-news-300d-1M.vec.zip",
 	"maxSentWordLen": 250,
 
 	"batchSize": 50,
-	"trainEpochs": 20,
+	"trainEpochs": 10,
 	"cnnFilterSizes": [3, 4, 5],
 	"cnnNumFilters": [100, 100, 100],
 	"cnnNumClasses": 2,
